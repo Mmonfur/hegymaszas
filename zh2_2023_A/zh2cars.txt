@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace MauiApp1
 {
-    public class Car
+    public class Car // Model: tartalmazza az autók tulajdonságait 3 property formájában + konstruktor, Description 
     {
         public string Name { get; set; }
         public string Type { get; set; }
@@ -43,8 +43,8 @@ namespace MauiApp1
 {
     public class DataModel : INotifyPropertyChanged
     {
-        private ObservableCollection<Car> _cars = new ObservableCollection<Car>();
-        public ObservableCollection<Car> Cars
+        private ObservableCollection<Car> _cars = new ObservableCollection<Car>(); // Megjelenítendő találatok tárolása
+        public ObservableCollection<Car> Cars 
         {
             get => _cars;
             set
@@ -53,7 +53,7 @@ namespace MauiApp1
                 OnPropertyChanged(nameof(Cars));
             }
         }
-
+        // Szűrőfeltételek: Brand, MaxPrice, SelectedType, Days
         private string _brand = "";
         public string Brand
         {
@@ -81,6 +81,8 @@ namespace MauiApp1
             get => _days;
             set => SetPropertyValue(ref _days, value, nameof(Days));
         }
+
+        // Kiíratás
 
         public string Summary =>
             $"Az ön keresési feltételei: {Brand} típusú {SelectedType} autó, összesen {Days} napra, napi maximum {MaxPrice} Ft";
@@ -191,6 +193,46 @@ namespace MauiApp1
             _model = new DataModel();
             BindingContext = _model;
             SearchButton.Command = new SearchCommand(_model);
+        }
+    }
+}
+
+------------------------------
+MauiApp1/SearchCommand.cs
+
+using System;
+using System.Threading.Tasks;
+using System.Windows.Input;
+
+namespace MauiApp1
+{
+
+/*
+Készítsen egy SearchCommand osztályt, mely implementálja az ICommand interfészt!
+A SearchCommand a konstruktorban vár egy DataModel példányt, amit elment egy privát tagváltozóban.
+Az Execute függvény szintén legyen aszinkron és hívja meg a fent létrehozott Search metódust,
+amennyiben a szűréshez használt Brand és SelectedType be van állítva (a validálásnál használja ugyanezt a tagváltozót).
+*/
+    public class SearchCommand : ICommand
+    {
+        private readonly DataModel _dataModel;
+
+        public SearchCommand(DataModel dataModel)
+        {
+            _dataModel = dataModel;
+            _dataModel.PropertyChanged += (_, _) => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        public event EventHandler? CanExecuteChanged;
+
+        public bool CanExecute(object? parameter) =>
+            !string.IsNullOrWhiteSpace(_dataModel.Brand) &&
+            !string.IsNullOrWhiteSpace(_dataModel.SelectedType);
+
+        public async void Execute(object? parameter)
+        {
+            if (CanExecute(parameter))
+                await _dataModel.Search();
         }
     }
 }
