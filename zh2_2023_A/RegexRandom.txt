@@ -1,0 +1,117 @@
+﻿ZH1 dolgok
+
+// 1. Hozz létre egy Ingredient osztalyt, ami három tagváltozóval rendelkezik: Name (string), Count (int) és Unit (string). 
+    // (Ilyenkor mindig kell konstruktor is.)
+    public class Ingredient
+    {
+        public string Name { get; set; }
+        public int Count { get; set; }
+        public string Unit { get; set; }
+
+        public Ingredient(string name, int count, string unit)
+        {
+            Name = name;
+
+            Count = count;
+
+            Unit = unit;
+        }
+
+ // 1. Adj hozzá egy GetRandom() statikus függvényt, mely visszaad egy véletlenszerű hozzávalót (elég, ha a Count értéke véletlenszerű).
+
+        public static Ingredient GetRandom()
+        {
+            // Véletlenszerű érték generálása
+            var random = new Random(); // létrehozzunk egy Random osztály példányt, amelyet véletlenszámok generálására használunk
+            string[] names = { "Liszt", "Cukor", "Tojás", "Vaj", "Tej" };  // Ezekből random választ egyet lentebb
+            string[] units = { "gramm", "db", "csomag", "dl" };
+
+            string Name = names[random.Next(names.Length)]; // 0 és 4 közötti index lehet (max. a tömb hosszúsága)
+            string Unit = units[random.Next(units.Length)]; // 0 és 4 közötti index
+            int Count = random.Next(1, 101); // 1 és 100 közötti véletlenszám
+
+            return new Ingredient(Name, Count, Unit);
+        }
+
+// 1. Hozz létre egy TriviallngredientSource osztályt, mely implementálja a fenti interfészt. Az osztály
+    // GetIngredients() metódusa az Ingredient.GetRandom() eredményét adja vissza N-szer, ahol N a
+    // TrivialingredientSource propertyje és értéke alapértelmezés szerint 3.  --> Konstrukror kell, ha van propery!
+    public class TrivialIngredientSource : IIngredientSource
+    {
+        public int N { get; set; } = 3;
+
+        public TrivialIngredientSource(int n)
+        {
+            N = n;
+        }
+
+        public IEnumerable<Ingredient> GetIngredients()
+        {
+            for (int i = 0; i < N; i++)
+            {
+                yield return Ingredient.GetRandom();
+            }
+        }
+    }
+
+ // A RecipeBook rendelkezzen egy Add(string) metódussal is, amivel a listára új Ingredient elemet lehet felvenni. 
+        public void Add(string input)
+        {
+            ingredients.Add(new Ingredient(input));
+        }
+
+// Az Ingredienthez egy olyan konstruktort készíts, ami egy stringet vár, és reguláris kifejezés segítségével dönti el,
+        // hogy jó-e, majd azután beállítja a Name, Count és Unit értékeket.
+        // Jónak akkor számít, ha az alábbi formátumban adjuk meg: „113 gramm liszt” vagy „2 csomag sütőpor”;
+        // nem jó a „Négy dl víz” vagy a „3 tojás”.
+        public Ingredient(string input)
+        {
+            var regex = new System.Text.RegularExpressions.Regex(@"^(\d+) (\w+) (.+)$"); // 3 group, az első érték szám
+            var match = regex.Match(input); // megvizsgálja, hogy az input szöveg megfelel-e a reguláris kifejezésnek.
+
+            if (!match.Success)
+                throw new ArgumentException("Invalid ingredient format.");
+
+            Count = int.Parse(match.Groups[1].Value); 
+            Unit = match.Groups[2].Value;
+            Name = match.Groups[3].Value;
+        }
+
+// Reguláris kifejezéshez tartozó teszt
+    public class TestIngredients
+    {
+        [Fact]
+        public void TestValidAndInvalidInputs()
+        {
+            var recipeBook = new RecipeBook();
+
+            // Valid inputs
+            recipeBook.Add("100 gramm cukor");
+            recipeBook.Add("2 csomag liszt");
+
+            Assert.Equal(2, recipeBook.GetIngredients().Count());
+
+            // Invalid inputs
+            Assert.Throws<ArgumentException>(() => recipeBook.Add("Négy dl víz"));
+            Assert.Throws<ArgumentException>(() => recipeBook.Add("3 tojás"));
+        }
+    }
+
+// Reguláris kifejezés email cím lefedése:
+
+    nagy.denes.ferenc.3@example.com
+    ^([^.]+)\.([^0-9@]+)(\.\d)?@example.com
+
+// Hozz Iétre egy TriviallngredientSourceTests unit teszt osztályt, benne egy TestCount nevű teszttel,
+    // ami példányosítja a TrivialIngredientSource osztályt úgy, hogy az 8 hozzávalót adjon vissza.
+    // Ezutan a unit teszt ellenőrizze, hogy a visszaadott hozzávalók száma tényleg ennyi-e. 
+    public class TrivialIngredientSourceTests
+    {
+        [Fact]
+        public void TestCount()
+        {
+            var source = new TrivialIngredientSource(8);  // var source = ... -> A típus automatikusan TrivialIngredientSource lesz
+            IEnumerable<Ingredient> ingredients = source.GetIngredients();  // var ingredients = ...
+            Assert.Equal(8, ingredients.Count()); //   A .Count IEnumerable típusú kollekciókra alkalmazható
+        }
+    }

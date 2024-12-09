@@ -1,0 +1,148 @@
+﻿Példa(1)
+
+var people = new List<Person>
+{
+    new Person { Name = "Anna", Age = 25 },
+    new Person { Name = "Béla", Age = 30 },
+    new Person { Name = "Csaba", Age = 20 },
+    new Person { Name = "Dóra", Age = 35 }
+};
+
+// Method chaining stílus LINQ-kifejezéssel
+var filteredAndSortedPeople = people
+    .Where(person => person.Age > 20)           // Szűrés
+    .OrderByDescending(person => person.Age)   // Rendezés életkor szerint csökk.
+    .Select(person => new { person.Name, person.Age }); // Projekció
+
+foreach (var person in filteredAndSortedPeople)
+{
+    Console.WriteLine($"{person.Name}, {person.Age}");
+}
+// Kimenet:
+// Dóra, 35
+// Béla, 30
+// Anna, 25
+
+Példa(2) - A betűvel kezdődő állatok
+
+ private async Task CountAnimalsStartingWithAAsync()
+    {
+        // Aszinkron számolás LINQ használatával
+        await Task.Run(() =>
+        {
+            var count = Animals.Count(a => a.Name.StartsWith("A", StringComparison.OrdinalIgnoreCase));
+            ACountResult = $"A-betűs állatok száma: {count}";
+            OnPropertyChanged(nameof(ACountResult));
+        });
+    }
+
+Példa(3) - Összesen hány a betű található
+
+ private async void CountA_Clicked(object sender, EventArgs e)
+        {
+            int aCount = 0;
+            foreach (var todo in Todos)
+            {
+                aCount += (todo.Name?.Count(c => c == 'a' || c == 'A') ?? 0);
+                aCount += (todo.Description?.Count(c => c == 'a' || c == 'A') ?? 0);
+            }
+
+            await DisplayAlert("A-betűk száma", $"Összesen {aCount} 'A' betű található.", "OK");
+        }
+
+1. Egyszerű szűrés (Where)
+
+var numbers = new int[] { 1, 2, 3, 4, 5, 6 };
+var evenNumbers = numbers.Where(n => n % 2 == 0);
+
+foreach (var num in evenNumbers)
+{
+    Console.WriteLine(num); // 2, 4, 6
+}
+
+2. Rendezés (OrderBy, OrderByDescending)
+
+var names = new string[] { "Anna", "Béla", "Zoltán", "Erika" };
+var orderedNames = names.OrderBy(n => n);
+
+foreach (var name in orderedNames)
+{
+    Console.WriteLine(name); // Anna, Béla, Erika, Zoltán
+}
+
+3. Projekció (Select)
+
+var numbers = new int[] { 1, 2, 3, 4 };
+var squaredNumbers = numbers.Select(n => n * n);
+
+foreach (var num in squaredNumbers)
+{
+    Console.WriteLine(num); // 1, 4, 9, 16
+}
+
+4. Több feltételes szűrés
+
+var numbers = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+var filteredNumbers = numbers.Where(n => n > 3 && n % 2 == 0);
+
+foreach (var num in filteredNumbers)
+{
+    Console.WriteLine(num); // 4, 6, 8
+}
+
+5. Csoportosítás (GroupBy)
+
+var words = new string[] { "alma", "banán", "ananász", "körte" };
+var groupedWords = words.GroupBy(w => w[0]); // Csoportosítás az első betű alapján
+
+foreach (var group in groupedWords)
+{
+    Console.WriteLine($"Betű: {group.Key}");
+    foreach (var word in group)
+    {
+        Console.WriteLine($"  {word}");
+    }
+}
+
+6. Aggregáció (Sum, Count, Average, Max, Min)
+
+var numbers = new int[] { 1, 2, 3, 4, 5 };
+Console.WriteLine(numbers.Sum());    // Összeg: 15
+Console.WriteLine(numbers.Count());  // Darabszám: 5
+Console.WriteLine(numbers.Average()); // Átlag: 3
+Console.WriteLine(numbers.Max());    // Maximum: 5
+Console.WriteLine(numbers.Min());    // Minimum: 1
+
+7. Egyezés keresése (Any, All, Contains)
+
+var numbers = new int[] { 1, 2, 3, 4, 5 };
+Console.WriteLine(numbers.Any(n => n > 3)); // True
+Console.WriteLine(numbers.All(n => n < 10)); // True
+Console.WriteLine(numbers.Contains(3)); // True
+
+8. Egyedi értékek (Distinct)
+
+var numbers = new int[] { 1, 2, 2, 3, 4, 4, 5 };
+var distinctNumbers = numbers.Distinct();
+
+foreach (var num in distinctNumbers)
+{
+    Console.WriteLine(num); // 1, 2, 3, 4, 5
+}
+
+9. Összefűzés (Concat)
+
+var numbers1 = new int[] { 1, 2, 3 };
+var numbers2 = new int[] { 4, 5, 6 };
+var allNumbers = numbers1.Concat(numbers2);
+
+foreach (var num in allNumbers)
+{
+    Console.WriteLine(num); // 1, 2, 3, 4, 5, 6
+}
+
+10. Első és utolsó elem (First, Last)
+
+var numbers = new int[] { 1, 2, 3, 4, 5 };
+Console.WriteLine(numbers.First()); // 1
+Console.WriteLine(numbers.Last());  // 5

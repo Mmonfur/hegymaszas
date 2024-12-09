@@ -1,0 +1,196 @@
+﻿MauiApp1/Car.cs
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace MauiApp1
+{
+    public class Car
+    {
+        public string Name { get; set; }
+        public string Type { get; set; }
+
+        public int Price { get; set; }
+
+        // 4. Description property: visszaadja az autó leírását az alábbi formában: „Toyota Yaris, 2000 Ft/nap (kicsi)”. 
+        public string Description => $"{Name}, {Price} Ft/nap ({Type})";
+
+
+        public Car(string name, string type, int price)
+        {
+            Name = name;
+            Type = type;
+            Price = price;
+        }
+
+    }
+}
+
+-------------------
+
+MauiApp1/DataModel.cs
+
+using System;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace MauiApp1
+{
+    public class DataModel : INotifyPropertyChanged
+    {
+        private ObservableCollection<Car> _cars = new ObservableCollection<Car>();
+        public ObservableCollection<Car> Cars
+        {
+            get => _cars;
+            set
+            {
+                _cars = value;
+                OnPropertyChanged(nameof(Cars));
+            }
+        }
+
+        private string _brand = "";
+        public string Brand
+        {
+            get => _brand;
+            set => SetPropertyValue(ref _brand, value, nameof(Brand));
+        }
+
+        private int _maxPrice = 0;
+        public int MaxPrice
+        {
+            get => _maxPrice;
+            set => SetPropertyValue(ref _maxPrice, value, nameof(MaxPrice));
+        }
+
+        private string _selectedType = "";
+        public string SelectedType
+        {
+            get => _selectedType;
+            set => SetPropertyValue(ref _selectedType, value, nameof(SelectedType));
+        }
+
+        private int _days = 1;
+        public int Days
+        {
+            get => _days;
+            set => SetPropertyValue(ref _days, value, nameof(Days));
+        }
+
+        public string Summary =>
+            $"Az ön keresési feltételei: {Brand} típusú {SelectedType} autó, összesen {Days} napra, napi maximum {MaxPrice} Ft";
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected virtual void SetPropertyValue<T>(ref T field, T value, string propertyName)
+        {
+            field = value;
+            OnPropertyChanged(propertyName);
+            OnPropertyChanged(nameof(Summary));
+        }
+
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public DataModel()
+        {
+            // Kezdetben üres `Cars` lista.
+            Cars = new ObservableCollection<Car>();    
+        }
+
+        public async Task Search()
+        {
+            var allCars = new List<Car>
+            {
+                new Car("Toyota Yaris", "kicsi", 2449),
+                new Car("Volvo v60", "kombi", 9000),
+                new Car("Volvo v90", "kombi", 1000),
+                new Car("Opel Astra", "kicsi", 500),
+                new Car("Peugeot Boxer", "nagy", 7000),
+                new Car("Nissan Cube", "kicsi", 4200),
+                new Car("Ford Focus", "kicsi", 1000),
+                new Car("Wolsvagen Golf", "kicsi", 3000),
+                new Car("BMW X6", "nagy", 5000),
+            };
+
+            var filteredCars = allCars
+                .Where(car => car.Name.Contains(Brand, StringComparison.OrdinalIgnoreCase) &&
+                              car.Type.Equals(SelectedType, StringComparison.OrdinalIgnoreCase) &&
+                              car.Price <= MaxPrice)
+                .ToList();
+
+            Cars.Clear();
+            foreach (var car in filteredCars)
+            {
+                await Task.Delay(1000);
+                Cars.Add(car);
+            }
+        }
+    }
+}
+----------------
+MauiApp1/MainPage.xaml
+
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiApp1.MainPage"
+             Title="MainPage">
+    <Grid ColumnDefinitions="*,*" RowDefinitions="*">
+        <!-- Szűrőfeltételek -->
+        <StackLayout Grid.Column="0" Padding="10" Spacing="10">
+            <Label Text="Márka"/>
+            <Entry Text="{Binding Brand, Mode=TwoWay}"/>
+            <Label Text="Maximum ár"/>
+            <Slider Minimum="1000" Maximum="10000" Value="{Binding MaxPrice, Mode=TwoWay}"/>
+            <Label Text="Fajta"/>
+            <Entry Text="{Binding SelectedType, Mode=TwoWay}"/>
+            <Label Text="Napok száma"/>
+            <Slider Minimum="1" Maximum="30" Value="{Binding Days, Mode=TwoWay}"/>
+            <!-- Kisebb keresés gomb és balra igazítva -->
+            <Button x:Name="SearchButton" Text="Keres" 
+                        WidthRequest="120" HeightRequest="40" 
+                        HorizontalOptions="Start"/>
+            <Label Text="{Binding Summary}"/>
+        </StackLayout>
+
+        <!-- Találatok listája -->
+        <CollectionView Grid.Column="1" ItemsSource="{Binding Cars}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <StackLayout Orientation="Horizontal" Padding="5">
+                        <Label Text="{Binding Description}" />
+                    </StackLayout>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>
+
+-------------------------------
+MauiApp1/MainPage.xaml.cs
+
+using Microsoft.Maui.Controls;
+
+namespace MauiApp1
+{
+    public partial class MainPage : ContentPage
+    {
+        private readonly DataModel _model;
+
+        public MainPage()
+        {
+            InitializeComponent();
+            _model = new DataModel();
+            BindingContext = _model;
+            SearchButton.Command = new SearchCommand(_model);
+        }
+    }
+}

@@ -1,0 +1,230 @@
+﻿Common/Person.cs
+
+using System;
+using System.Collections.Generic;
+using System.Dynamic;
+using System.Linq;
+using System.Net.Cache;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Common
+{
+    public class Person
+    {
+        public Person(string name, int age, int height)  //konstruktor inicializálás; snippet: "ctor"
+        {
+            Name = name;
+            Age = age;
+            Height = height;
+        }
+        public string Name { get; set; }  //snippet: "prop" (property)
+        public int Age { get; set; }
+        public int Height { get; set; }
+        
+        public static Person GetMe()
+        {
+            return new Person("Móni", 35, 160);
+        }
+
+        public override string ToString()
+        {
+            return $"{Name}, {Age} éves, {Height} cm magas";
+        }
+    }
+}
+-----------------------------------
+Common/IPersonSource.cs
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Common
+{
+    public interface IPersonSource
+    {        
+        IEnumerable<Person> GetPersons(); // Metódus definíció
+
+    }
+}
+
+-----------------------------------
+Common/TrivialPersonSource.cs
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Common
+{
+    public class TrivialPersonSource : IPersonSource //Hozz létre egy TrivialPersonSource osztályt, mely implementálja az IPersonSource interfészt. 
+    {
+        private readonly int N;
+
+        // Konstruktor, ami fogad egy N értéket, ami meghatározza hány személyt ad vissza
+        public TrivialPersonSource(int n)
+        {
+            N = n;
+        }
+
+        public IEnumerable<Person> GetPersons() // a Person.GetMe() eredményét adja vissza N-szer
+        {
+            for (int i = 0; i < N; i++)
+            {
+                yield return Person.GetMe();
+            }
+
+        }
+    }
+}
+
+-----------------------------------
+Common/AdvancedPersonSource.cs
+
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Common
+{
+    public class AdvancedPersonSource : IPersonSource
+    {
+        private List<Person> persons = new List<Person>(); // IEnumerable kollekció
+
+        public IEnumerable<Person> GetPersons()
+        {
+            return persons; // Lista visszaadása
+        }
+
+        //A listára új elemet felvenni egy Add(string name, int age, int height) metódussal lehessen
+        public void Add(string name, int age, int height)
+        {
+            Person newPerson = new Person(name, age, height);
+            persons.Add(newPerson);
+        }
+    }
+}
+
+-----------------------------
+
+ConsoleApplication/Program.cs
+
+using System;
+using Common;
+using System.Collections.Generic;
+
+namespace ConsoleApplication
+{
+    class Program
+    {
+        static void Main(string[] args) // snippet: "svm"
+        {
+            TrivialPersonSource trivialPersonSource = new TrivialPersonSource(3);
+            IEnumerable<Person> trivialPersons = trivialPersonSource.GetPersons();
+
+            AdvancedPersonSource advancedPersonSource = new AdvancedPersonSource();
+            advancedPersonSource.Add("Anna", 28, 165);
+            advancedPersonSource.Add("Béla", 33, 180);
+            advancedPersonSource.Add("Csaba", 40, 175);
+            advancedPersonSource.Add("Dóra", 22, 160);
+
+            IEnumerable<Person> advancedPersons = advancedPersonSource.GetPersons();
+
+            // 3. TrivialPersonSource-ból visszaadott személyek kiírása
+            Console.WriteLine("TrivialPersonSource személyek:");
+            foreach (var person in trivialPersons)
+            {
+                // Implicit módon meghívódik a ToString() metódus
+                Console.WriteLine(person);
+            }
+
+            // 4. AdvancedPersonSource-ból visszaadott személyek kiírása
+            Console.WriteLine("\nAdvancedPersonSource személyek:");
+            foreach (var person in advancedPersons)
+            {
+                // Implicit módon meghívódik a ToString() metódus
+                Console.WriteLine(person);
+            }
+
+            /* Ezt írja most ki a Program:
+             * 
+                TrivialPersonSource személyek:
+                Móni, 35 éves, 160 cm magas
+                Móni, 35 éves, 160 cm magas
+                Móni, 35 éves, 160 cm magas
+
+                AdvancedPersonSource személyek:
+                Anna, 28 éves, 165 cm magas
+                Béla, 33 éves, 180 cm magas
+                Csaba, 40 éves, 175 cm magas
+                Dóra, 22 éves, 160 cm magas
+             */
+
+        }
+    }
+}
+
+Tests/AdvancedPersonSourceTests.cs
+
+using Common;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Tests
+{
+    public class AdvancedPersonSourceTests
+    {
+        [Fact]
+        public void TestAdd()  //snippet: "testm"
+        {
+            // Arrange: Létrehozunk egy AdvancedPersonSource példányt
+            AdvancedPersonSource source = new AdvancedPersonSource();
+
+            // Három személy felvétele
+            source.Add("Anna", 28, 165);
+            source.Add("Béla", 33, 180);
+            source.Add("Csaba", 40, 175);
+
+            // Act: Lekérjük a GetPersons() metódussal a személyeket
+            IEnumerable<Person> persons = source.GetPersons();
+            int actualCount = persons.Count();  
+
+            // Assert: Ellenőrizzük, hogy a listában 3 személy található
+            Assert.Equal(3, actualCount);
+        }
+    }
+}
+
+Tests/TrivialPersonSourceTests.cs
+
+using Common;
+
+namespace Tests
+{
+    public class TrivialPersonSourceTests
+    {
+        [Fact]
+        public void TestCount()
+        {
+            // Arrange: Létrehozzuk a TrivialPersonSource példányt, 12 személyt kell visszaadnia
+            int expectedCount = 12;
+            TrivialPersonSource source = new TrivialPersonSource(expectedCount);
+
+            // Act: Meghívjuk a GetPersons metódust és megszámoljuk a visszaadott személyeket
+            IEnumerable<Person> persons = source.GetPersons();
+            int actualCount = persons.Count(); 
+
+            // Assert: Ellenőrizzük, hogy a tényleges visszaadott személyek száma 12-e
+            Assert.Equal(expectedCount, actualCount);
+        }
+    }
+}

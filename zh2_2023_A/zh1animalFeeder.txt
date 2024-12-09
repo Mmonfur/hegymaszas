@@ -1,0 +1,241 @@
+﻿Common/
+Animal.cs
+
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Common
+{
+    public class Animal
+    {
+        public Animal(string type, double weight, double speed)
+        {
+            Type = type;
+            Weight = weight;    
+            Speed = speed;
+        }
+        public string Type { get; set; }
+        public double Weight { get; set; }
+        public double Speed { get; set; }
+
+        // Statikus property kedvenc állathoz
+        public static Animal Favourite => new Animal("tigris", 220.5, 50.0); // Visszatér a kedvenc állatoddal
+
+        public string GetData()
+        {
+            return $"A(z) {Type} sebessége {Speed} km/h, a súlya pedig {Weight} kg.";
+        }
+    }
+}
+
+Common
+/IAnimalModifier.cs
+
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Common
+{
+    public interface IAnimalModifier
+    {
+        public void Modify(Animal animal);
+    }
+}
+
+Common
+/AnimalFeeder.cs
+
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Common
+{
+    //Interfész implementáció
+    public class AnimalFeeder : IAnimalModifier
+    {
+        public double Amount { get; set; }  // Amount tagváltozó
+
+        public AnimalFeeder(double amount)  // konstruktor
+        {
+            Amount = amount;
+        }
+        public void Modify(Animal animal)
+        {
+            if (animal != null)
+            { 
+                animal.Weight += Amount; 
+            }
+            
+        }
+    }
+}
+
+Common
+/Zoo.cs
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
+
+namespace Common
+{
+    public class Zoo
+    {
+        private List<Animal> animals = new List<Animal>();
+
+        // Állat hozzáadása a lista elejére
+        public void Insert(Animal animal)
+        {
+            animals.Insert(0, animal); // 0 az index, így az elejére kerül
+        }
+
+        // Visszaadja, h. hány állat van az állatkertben
+        public int Count()
+        {
+            return animals.Count;
+        }
+
+        public double GetAverageSpeed()
+        {
+            if (animals.Count == 0)  // avoid division by zero
+            {
+                return 0;
+            }
+            return animals.Sum(animal => animal.Speed)/animals.Count;
+        }
+
+        public Animal GetHeaviestAnimal()
+        {
+            // Initialize the heaviest animal as the first one in the list
+            Animal heaviestAnimal = animals[0];
+
+            foreach (Animal animal in animals)
+            {
+                if (animal.Weight > heaviestAnimal.Weight)
+                {
+                    heaviestAnimal = animal; //Update if the heaviest animal is found
+                }
+            }
+            return heaviestAnimal;
+        }
+    }
+}
+
+ConsoleApplication
+/Program.cs
+
+using Common;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ConsoleApplication
+{
+    internal class Program
+    {
+    //20* alkalmazza a módosítást
+        public static void PrintAndModify(IAnimalModifier animalModifier, Animal animal)
+        { 
+            for (int i = 0; i < 20; i++)
+            {
+                animalModifier.Modify(animal);
+                Console.WriteLine(animal.GetData());
+            }
+        }
+
+        static void Main(string[] args)
+        {
+            AnimalFeeder animalFeeder = new AnimalFeeder(50);
+            Animal favouriteAnimal = Animal.Favourite;
+            PrintAndModify(animalFeeder, favouriteAnimal);
+        }
+    }
+
+Tests
+/ModifierTests.cs
+
+﻿using Common;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Tests
+{
+//  Ha 13-mal megnövelünk egy állatot, akkor az valóban hozzáadódik-e a súlyához
+    public class ModifierTests
+    {
+        [Fact]
+        public void TestFeedAnimal()
+        {
+            AnimalFeeder animalFeeder = new AnimalFeeder(13);
+            Animal animal = new Animal("Cat", 10.0, 50.0);
+            animalFeeder.Modify(animal);
+            Assert.True(animal.Weight == 23);
+        }
+    }
+}
+
+Tests
+/ZooTests.cs
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Common;
+
+namespace Tests
+{
+// Példányosítja a Zoo osztályt, beszúrja a kedvenc állatot 3*, ellenőrzi, hogy 3 tagú-e a zoo
+    public class ZooTests
+    {
+        [Fact]
+        public void TestInsert()
+        {
+            Zoo zoo = new Zoo();
+
+            for (int i = 0; i < 3;  i++) 
+            {   
+                zoo.Insert(Animal.Favourite);
+            }
+            
+            Assert.True(zoo.Count()==3);     
+        }
+
+        // Legnehezebb állat megváltozik a Modify hatására
+
+        [Fact]
+        public void TestHeaviestAnimal()
+        {
+            Zoo zoo = new Zoo();
+            Animal animal1 = new Animal("tehén", 200.0, 30.0);
+            Animal animal2 = new Animal("ló", 100.0, 70.0);
+            Animal animal3 = new Animal("kutya", 30.0, 60.0);
+            zoo.Insert(animal1);
+            zoo.Insert(animal2);
+            zoo.Insert(animal3);
+            Animal heaviestAnimal = zoo.GetHeaviestAnimal();
+            AnimalFeeder animalFeeder = new AnimalFeeder(110);
+            animalFeeder.Modify(animal2);
+            Animal heaviestAnimal2 = zoo.GetHeaviestAnimal();
+            Assert.True(heaviestAnimal2.Weight > heaviestAnimal.Weight);
+        }
+    }
+}
